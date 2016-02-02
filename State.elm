@@ -12,25 +12,26 @@ type alias Direction =
   , y : Int
   }
 
-type alias State =
-  { map : Matrix String
+type alias State a =
+  { map : Matrix a
   , pos : Location
+  , player : a
   }
 
-toMap : State -> List (List String)
+toMap : State a -> List (List a)
 toMap s =
-  Matrix.set s.pos "P" s.map |> Matrix.toList
+  Matrix.set s.pos s.player s.map |> Matrix.toList
 
-moveTo : Direction -> State -> Maybe State
-moveTo d s =
+moveTo : (a -> Bool) -> Direction -> State a -> Maybe (State a)
+moveTo p d s =
   let
     s' = move d s
   in
-    if isPosValid s' && cellAtPos s' == "F"
+    if isPosInBounds s' && isPosValid p s'
     then Just s'
     else Nothing
 
-move : Direction -> State -> State
+move : Direction -> State a -> State a
 move d s =
   { s
     | pos = Matrix.loc
@@ -38,11 +39,12 @@ move d s =
             (Matrix.col s.pos + d.x)
   }
 
-cellAtPos : State -> String
-cellAtPos s = Maybe.withDefault "" <| Matrix.get s.pos s.map
+isPosValid : (a -> Bool) -> State a -> Bool
+isPosValid p s =
+  Maybe.withDefault False <| Maybe.map p <| Matrix.get s.pos s.map
 
-isPosValid : State -> Bool
-isPosValid s =
+isPosInBounds : State a -> Bool
+isPosInBounds s =
   let
     col = Matrix.col s.pos
     row = Matrix.row s.pos

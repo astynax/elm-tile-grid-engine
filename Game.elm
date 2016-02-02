@@ -44,6 +44,7 @@ start game =
 render : TileSet comparable -> GameMap comparable -> Html
 render ts map =
   let
+    toPx x = String.append (toString x) "px"
     width =
       (*) (fst ts.size)
       <| Maybe.withDefault 0
@@ -51,12 +52,12 @@ render ts map =
       <| List.head map
   in
     Html.div
-    [ style [("width", String.append (toString width) "px")] ]
+    [ style [("width", toPx width)] ]
     <| List.map
          (\c ->
             Html.div
-            [ style [ ("width", "32px")
-                    , ("height", "32px")
+            [ style [ ("width", toPx <| fst ts.size)
+                    , ("height", toPx <| snd ts.size)
                     , ("float", "left")
                     ] ]
             [ Html.img [ src (assetFor ts c) ] [] ]

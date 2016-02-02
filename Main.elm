@@ -16,10 +16,10 @@ main =
   { state = initialState
   , getMap = State.toMap
   , tileSet = tileSet
-  , updates = Keyboard.arrows |> Signal.map State.moveTo
+  , updates = Keyboard.arrows |> Signal.map (State.moveTo (\x -> x == "F"))
   }
 
-initialState : State.State
+initialState : State.State String
 initialState =
   { map =
       Matrix.fromList
@@ -29,6 +29,7 @@ initialState =
       , [ "B", "F", "F", "F" ]
       ]
   , pos = Matrix.loc 1 1
+  , player = "P"
   }
 
 tileSet : Game.TileSet String
@@ -38,6 +39,6 @@ tileSet =
   , tiles =
       Dict.fromList
             [ ("F", "image/floor.png")
-            , ("P", "image/pc.png")
+            , ("P", "image/pc_on_floor.png")
             ]
   }
