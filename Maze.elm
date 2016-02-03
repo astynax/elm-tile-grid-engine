@@ -1,4 +1,4 @@
-module Main where
+module Maze where
 
 import Dict
 import Signal exposing (Signal)
