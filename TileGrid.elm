@@ -4,7 +4,6 @@ module TileGrid
   , start
   ) where
 
-import Dict exposing (Dict)
 import Maybe exposing (Maybe)
 import Signal exposing (Signal)
 import String
@@ -14,34 +13,34 @@ import Html.Attributes exposing (src, style)
 import Signal.Extra as Signal
 
 
-type alias App a b =
-  { state : a
-  , getMap : a -> TileMap b
-  , updates : Signal (Update a)
-  , tileSet : TileSet b
+type alias App state cell =
+  { state : state
+  , getMap : state -> TileMap cell
+  , updates : Signal (Update state)
+  , tileSet : TileSet cell
   }
 
-type alias TileMap a = List (List a)
+type alias TileMap cell = List (List cell)
 
-type alias Update a = a -> Maybe a
+type alias Update state = state -> Maybe state
 
 type alias TileAsset = String
 
 type alias TileSize = (Int, Int)
 
-type alias TileSet a =
+type alias TileSet cell =
   { size : TileSize
-  , toTile : a -> TileAsset
+  , toTile : cell -> TileAsset
   }
 
 
-start : App a b -> Signal Html
+start : App state cell -> Signal Html
 start app =
   Signal.map (\g -> render g.tileSet <| g.getMap g.state)
   <| Signal.filterFold updateState app app.updates
 
 
-render : TileSet b -> TileMap b -> Html
+render : TileSet cell -> TileMap cell -> Html
 render ts map =
   let
     toPx x = String.append (toString x) "px"
@@ -65,6 +64,6 @@ render ts map =
     <| List.concat map
 
 
-updateState : Update a -> App a b -> Maybe (App a b)
+updateState : Update state -> App state cell -> Maybe (App state cell)
 updateState update app =
   Maybe.map (\s -> { app | state = s}) <| update app.state
