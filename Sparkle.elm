@@ -7,12 +7,12 @@ import Keyboard
 import Html exposing (Html)
 import Matrix
 
-import Game
+import TileGrid exposing (TileSet)
 import State exposing (State, Direction)
 
 main : Signal Html
 main =
-  Game.start
+  TileGrid.start
   { state = initialState
   , getMap = State.toMap
   , tileSet = tileSet
@@ -32,11 +32,11 @@ initialState =
   , player = 10
   }
 
-tileSet : Game.TileSet Int
+tileSet : TileSet Int
 tileSet =
-  { size = (24, 24)
-  , default = "image/darkness.png"
-  , tiles =
+  let
+    default = "image/darkness.png"
+    tiles =
       Dict.fromList
             [ (1, "image/fire1.png")
             , (2, "image/fire2.png")
@@ -46,4 +46,7 @@ tileSet =
             , (10, "image/sparkle1.png")
             , (11, "image/sparkle2.png")
             ]
-  }
+  in
+    { size = (24, 24)
+    , toTile = Maybe.withDefault default << flip Dict.get tiles
+    }

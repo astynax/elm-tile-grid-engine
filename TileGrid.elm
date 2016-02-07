@@ -1,5 +1,6 @@
-module Game
-  ( Game, GameMap, Update, TileAsset, TileSet
+module TileGrid
+  ( App, TileMap, Update
+  , TileAsset, TileSize, TileSet, fromDict
   , start
   ) where
 
@@ -10,38 +11,37 @@ import String
 
 import Html exposing (Html)
 import Html.Attributes exposing (src, style)
+import Signal.Extra as Signal
 
-type alias Game a comparable =
+
+type alias App a b =
   { state : a
-  , getMap : a -> GameMap comparable
+  , getMap : a -> TileMap b
   , updates : Signal (Update a)
-  , tileSet : TileSet comparable
+  , tileSet : TileSet b
   }
 
-type alias GameMap a = List (List a)
+type alias TileMap a = List (List a)
 
 type alias Update a = a -> Maybe a
 
 type alias TileAsset = String
 
-type alias TileSet comparable =
-  { size : (Int, Int)
-  , default : TileAsset
-  , tiles : Dict comparable TileAsset
+type alias TileSize = (Int, Int)
+
+type alias TileSet a =
+  { size : TileSize
+  , toTile : a -> TileAsset
   }
 
 
-start : Game a comparable -> Signal Html
-start game =
+start : App a b -> Signal Html
+start app =
   Signal.map (\g -> render g.tileSet <| g.getMap g.state)
-  <| Signal.foldp
-       (\update g ->
-          { g | state = Maybe.withDefault g.state <| update g.state })
-         game
-         game.updates
+  <| Signal.filterFold updateState app app.updates
 
 
-render : TileSet comparable -> GameMap comparable -> Html
+render : TileSet b -> TileMap b -> Html
 render ts map =
   let
     toPx x = String.append (toString x) "px"
@@ -60,11 +60,22 @@ render ts map =
                     , ("height", toPx <| snd ts.size)
                     , ("float", "left")
                     ] ]
-            [ Html.img [ src (assetFor ts c) ] [] ]
+            [ Html.img [ src (ts.toTile c) ] [] ]
          )
     <| List.concat map
 
 
-assetFor : TileSet comparable -> comparable -> TileAsset
-assetFor ts t =
-  Maybe.withDefault ts.default <| Dict.get t ts.tiles
+updateState : Update a -> App a b -> Maybe (App a b)
+updateState update app =
+  Maybe.map (\s -> { app | state = s}) <| update app.state
+
+
+fromDict
+  : TileSize
+  -> TileAsset
+  -> Dict comparable TileAsset
+  -> TileSet comparable
+fromDict size default tiles =
+  { size = size
+  , toTile =
+  }
