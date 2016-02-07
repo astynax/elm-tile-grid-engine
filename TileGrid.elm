@@ -1,6 +1,6 @@
 module TileGrid
   ( App, TileMap, Update
-  , TileAsset, TileSize, TileSet, fromDict
+  , TileAsset, TileSize, TileSet
   , start
   ) where
 
@@ -68,14 +68,3 @@ render ts map =
 updateState : Update a -> App a b -> Maybe (App a b)
 updateState update app =
   Maybe.map (\s -> { app | state = s}) <| update app.state
-
-
-fromDict
-  : TileSize
-  -> TileAsset
-  -> Dict comparable TileAsset
-  -> TileSet comparable
-fromDict size default tiles =
-  { size = size
-  , toTile =
-  }
