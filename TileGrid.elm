@@ -1,7 +1,7 @@
 module TileGrid
-  ( App, TileMap, Update
-  , TileAsset, TileSize, TileSet
-  , start
+  ( App, start
+  , Update, TileMap, TileAsset, TileSize, TileSet
+  , mergeUpdates, combine
   ) where
 
 import Maybe exposing (Maybe)
@@ -67,3 +67,17 @@ render ts map =
 updateState : Update state -> App state cell -> Maybe (App state cell)
 updateState update app =
   Maybe.map (\s -> { app | state = s}) <| update app.state
+
+
+mergeUpdates
+  : Signal (Update state) -> Signal (Update state) -> Signal (Update state)
+mergeUpdates s1 s2 =
+  Signal.fairMerge combine s1 s2
+
+
+combine : Update state -> Update state -> Update state
+combine u1 u2 =
+  let
+    try f x = Maybe.withDefault x <| f x
+  in
+    Just << try u2 << try u1
