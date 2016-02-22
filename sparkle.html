@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Sparkle</title>
+    <script type="text/javascript" src="js/render.js"></script>
+    <script type="text/javascript" src="elm.js"></script>
+  </head>
+  <body>
+    <canvas id="output" width="960" height="720"></canvas>
+
+    <div style="display:none;">
+      <img id="sprite-empty" width="24" height="24" src="images/darkness.png">
+      <img id="sprite-fire1" width="24" height="24" src="images/fire1.png">
+      <img id="sprite-fire2" width="24" height="24" src="images/fire2.png">
+      <img id="sprite-fire3" width="24" height="24" src="images/fire3.png">
+      <img id="sprite-fire4" width="24" height="24" src="images/fire4.png">
+      <img id="sprite-fire5" width="24" height="24" src="images/fire5.png">
+      <img id="sprite-pc1" width="24" height="24" src="images/sparkle1.png">
+      <img id="sprite-pc2" width="24" height="24" src="images/sparkle2.png">
+    </div>
+
+    <script type="text/javascript">
+      initRender(
+        Elm.worker(Elm.Sparkle).ports.updates,
+        "output", 24, 24, {
+          0: "sprite-empty",
+          11: "sprite-fire1",
+          12: "sprite-fire2",
+          13: "sprite-fire3",
+          14: "sprite-fire4",
+          15: "sprite-fire5",
+          21: "sprite-pc1",
+          22: "sprite-pc2",
+        }
+      );
+    </script>
+  </body>
+</html>
