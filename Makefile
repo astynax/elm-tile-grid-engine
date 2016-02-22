@@ -1,7 +1,7 @@
 maze:
-	elm-make Maze.elm --output elm.js
+	elm-make Maze.elm --output dist/maze.js
 
 sparkle:
-	elm-make Sparkle.elm --output elm.js
+	elm-make Sparkle.elm --output dist/sparkle.js
 
-all: sparkle
+all: sparkle maze
