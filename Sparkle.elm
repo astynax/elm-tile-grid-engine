@@ -4,10 +4,9 @@ import Signal exposing (Signal)
 import Time
 import Keyboard
 
-import Html exposing (Html)
 import Matrix
 
-import TileGrid exposing (TileSet)
+import TileGrid exposing (TileSet, Screen)
 import State exposing (State, Direction)
 
 type alias FPS = Int
@@ -24,8 +23,8 @@ type Cell
   | Player Phase
 
 
-main : Signal Html
-main =
+port updates : Signal Screen
+port updates =
   let
     (<>) = TileGrid.mergeUpdates
   in
@@ -42,7 +41,7 @@ main =
 
 initialState : GameState
 initialState =
-  { map = Matrix.square 11 (\_ -> Floor)
+  { map = Matrix.matrix 30 40 (\_ -> Floor)
   , pos = Matrix.loc 5 5
   , player = Player True
   }
@@ -51,21 +50,25 @@ initialState =
 tileSet : TileSet Cell
 tileSet =
   { size = (24, 24)
-  , toTile = \cell ->
+  , toID = \cell ->
       case cell of
-        Fire 1 -> "image/fire1.png"
-        Fire 2 -> "image/fire2.png"
-        Fire 3 -> "image/fire3.png"
-        Fire 4 -> "image/fire4.png"
-        Fire 5 -> "image/fire5.png"
-        Player True -> "image/sparkle1.png"
-        Player False -> "image/sparkle2.png"
-        _ -> "image/darkness.png"
+        Fire 1 -> 11
+        Fire 2 -> 12
+        Fire 3 -> 13
+        Fire 4 -> 14
+        Fire 5 -> 15
+        Player True -> 21
+        Player False -> 22
+        _ -> 0
   }
 
 movement : Evolution
 movement =
-  Keyboard.arrows
+  let
+    keys = Keyboard.arrows
+    autorepeat = Signal.sampleOn (Time.fps 5)
+  in
+    Signal.merge keys (autorepeat keys)
     |> Signal.map (State.moveTo (\_ -> True))
 
 
