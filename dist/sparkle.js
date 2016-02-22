@@ -8072,13 +8072,15 @@ Elm.TileGrid.make = function (_elm) {
    });
    var mergeUpdates = F2(function (s1,s2) {    return A3($Signal$Extra.fairMerge,combine,s1,s2);});
    var updateState = F2(function (update,app) {    return A2($Maybe.map,function (s) {    return _U.update(app,{state: s});},update(app.state));});
-   var render = function (ts) {    return $List.map($List.map(ts.toID));};
    var start = function (app) {
-      return A2($Signal.map,function (g) {    return A2(render,g.tileSet,g.getMap(g.state));},A3($Signal$Extra.filterFold,updateState,app,app.updates));
+      return A2($Signal.map,
+      function (g) {
+         return A2($List.map,$List.map(app.toTileId),g.getMap(g.state));
+      },
+      A3($Signal$Extra.filterFold,updateState,app,app.updates));
    };
-   var TileSet = F2(function (a,b) {    return {size: a,toID: b};});
-   var App = F4(function (a,b,c,d) {    return {state: a,getMap: b,updates: c,tileSet: d};});
-   return _elm.TileGrid.values = {_op: _op,start: start,mergeUpdates: mergeUpdates,combine: combine,App: App,TileSet: TileSet};
+   var App = F4(function (a,b,c,d) {    return {state: a,getMap: b,updates: c,toTileId: d};});
+   return _elm.TileGrid.values = {_op: _op,start: start,mergeUpdates: mergeUpdates,combine: combine,App: App};
 };
 Elm.State = Elm.State || {};
 Elm.State.make = function (_elm) {
@@ -8132,27 +8134,26 @@ Elm.Sparkle.make = function (_elm) {
       var keys = $Keyboard.arrows;
       return A2($Signal.map,$State.moveTo(function (_p1) {    return true;}),A2($Signal.merge,keys,autorepeat(keys)));
    }();
-   var tileSet = {size: {ctor: "_Tuple2",_0: 24,_1: 24}
-                 ,toID: function (cell) {
-                    var _p2 = cell;
-                    _v0_7: do {
-                       switch (_p2.ctor)
-                       {case "Fire": switch (_p2._0)
-                            {case 1: return 11;
-                               case 2: return 12;
-                               case 3: return 13;
-                               case 4: return 14;
-                               case 5: return 15;
-                               default: break _v0_7;}
-                          case "Player": if (_p2._0 === true) {
-                                  return 21;
-                               } else {
-                                  return 22;
-                               }
-                          default: break _v0_7;}
-                    } while (false);
-                    return 0;
-                 }};
+   var toTileId = function (cell) {
+      var _p2 = cell;
+      _v0_7: do {
+         switch (_p2.ctor)
+         {case "Fire": switch (_p2._0)
+              {case 1: return 11;
+                 case 2: return 12;
+                 case 3: return 13;
+                 case 4: return 14;
+                 case 5: return 15;
+                 default: break _v0_7;}
+            case "Player": if (_p2._0 === true) {
+                    return 21;
+                 } else {
+                    return 22;
+                 }
+            default: break _v0_7;}
+      } while (false);
+      return 0;
+   };
    var Player = function (a) {    return {ctor: "Player",_0: a};};
    var playerBlinking = function (state) {
       return _U.update(state,
@@ -8186,25 +8187,22 @@ Elm.Sparkle.make = function (_elm) {
       state.map)});
    };
    var putFlameAtPlayerPos = function (state) {    return _U.update(state,{map: A3($Matrix.set,state.pos,Fire(5),state.map)});};
-   var updates = Elm.Native.Port.make(_elm).outboundSignal("updates",
+   var updates = function () {
+      _op["<>"] = $TileGrid.mergeUpdates;
+      return A2(andAfter,A2(_op["<>"],A2(_op["<>"],movement,A2(timesPerSec,3,playerBlinking)),A2(timesPerSec,5,flameDying)),putFlameAtPlayerPos);
+   }();
+   var redraw = Elm.Native.Port.make(_elm).outboundSignal("redraw",
    function (v) {
       return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return v;});});
    },
-   function () {
-      _op["<>"] = $TileGrid.mergeUpdates;
-      return $TileGrid.start({state: initialState
-                             ,getMap: $State.toMap
-                             ,tileSet: tileSet
-                             ,updates: A2(andAfter,
-                             A2(_op["<>"],A2(_op["<>"],movement,A2(timesPerSec,3,playerBlinking)),A2(timesPerSec,5,flameDying)),
-                             putFlameAtPlayerPos)});
-   }());
+   $TileGrid.start({state: initialState,getMap: $State.toMap,toTileId: toTileId,updates: updates}));
    return _elm.Sparkle.values = {_op: _op
                                 ,Fire: Fire
                                 ,Floor: Floor
                                 ,Player: Player
                                 ,initialState: initialState
-                                ,tileSet: tileSet
+                                ,toTileId: toTileId
+                                ,updates: updates
                                 ,movement: movement
                                 ,playerBlinking: playerBlinking
                                 ,flameDying: flameDying

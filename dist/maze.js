@@ -7916,13 +7916,15 @@ Elm.TileGrid.make = function (_elm) {
    });
    var mergeUpdates = F2(function (s1,s2) {    return A3($Signal$Extra.fairMerge,combine,s1,s2);});
    var updateState = F2(function (update,app) {    return A2($Maybe.map,function (s) {    return _U.update(app,{state: s});},update(app.state));});
-   var render = function (ts) {    return $List.map($List.map(ts.toID));};
    var start = function (app) {
-      return A2($Signal.map,function (g) {    return A2(render,g.tileSet,g.getMap(g.state));},A3($Signal$Extra.filterFold,updateState,app,app.updates));
+      return A2($Signal.map,
+      function (g) {
+         return A2($List.map,$List.map(app.toTileId),g.getMap(g.state));
+      },
+      A3($Signal$Extra.filterFold,updateState,app,app.updates));
    };
-   var TileSet = F2(function (a,b) {    return {size: a,toID: b};});
-   var App = F4(function (a,b,c,d) {    return {state: a,getMap: b,updates: c,tileSet: d};});
-   return _elm.TileGrid.values = {_op: _op,start: start,mergeUpdates: mergeUpdates,combine: combine,App: App,TileSet: TileSet};
+   var App = F4(function (a,b,c,d) {    return {state: a,getMap: b,updates: c,toTileId: d};});
+   return _elm.TileGrid.values = {_op: _op,start: start,mergeUpdates: mergeUpdates,combine: combine,App: App};
 };
 Elm.State = Elm.State || {};
 Elm.State.make = function (_elm) {
@@ -7968,27 +7970,18 @@ Elm.Maze.make = function (_elm) {
    $State = Elm.State.make(_elm),
    $TileGrid = Elm.TileGrid.make(_elm);
    var _op = {};
-   var tileSet = {size: {ctor: "_Tuple2",_0: 32,_1: 32}
-                 ,toID: function (cell) {
-                    var _p0 = cell;
-                    switch (_p0.ctor)
-                    {case "F": return 1;
-                       case "P": return 2;
-                       default: return 0;}
-                 }};
+   var toTileId = function (cell) {    var _p0 = cell;switch (_p0.ctor) {case "F": return 1;case "P": return 2;default: return 0;}};
    var P = {ctor: "P"};
    var B = {ctor: "B"};
    var F = {ctor: "F"};
    var initialState = {map: $Matrix.fromList(_U.list([_U.list([B,B,F,B]),_U.list([F,F,F,B]),_U.list([B,F,B,B]),_U.list([B,F,F,F])]))
                       ,pos: A2($Matrix.loc,1,1)
                       ,player: P};
-   var updates = Elm.Native.Port.make(_elm).outboundSignal("updates",
+   var updates = A2($Signal.map,$State.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows);
+   var redraw = Elm.Native.Port.make(_elm).outboundSignal("redraw",
    function (v) {
       return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return v;});});
    },
-   $TileGrid.start({state: initialState
-                   ,getMap: $State.toMap
-                   ,tileSet: tileSet
-                   ,updates: A2($Signal.map,$State.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows)}));
-   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,initialState: initialState,tileSet: tileSet};
+   $TileGrid.start({state: initialState,getMap: $State.toMap,toTileId: toTileId,updates: updates}));
+   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,initialState: initialState,toTileId: toTileId,updates: updates};
 };
