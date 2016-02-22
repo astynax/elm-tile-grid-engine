@@ -6,38 +6,33 @@ import Keyboard
 
 import Matrix
 
-import TileGrid exposing (TileSet, Screen)
+import TileGrid exposing (Update, Screen, TileId)
 import State exposing (State, Direction)
 
-type alias FPS = Int
 
 type alias Phase = Bool
-
-type alias GameState = State Cell
-
-type alias Evolution = Signal (TileGrid.Update GameState)
 
 type Cell
   = Fire Int
   | Floor
   | Player Phase
 
+type alias GameState = State Cell
 
-port updates : Signal Screen
-port updates =
-  let
-    (<>) = TileGrid.mergeUpdates
-  in
-    TileGrid.start
-    { state = initialState
-    , getMap = State.toMap
-    , tileSet = tileSet
-    , updates =
-        ( movement
-            <> (3 `timesPerSec` playerBlinking)
-            <> (5 `timesPerSec` flameDying)
-        ) `andAfter` putFlameAtPlayerPos
-    }
+type alias Evolution = Signal (Update GameState)
+
+type alias FPS = Int
+
+
+port redraw : Signal Screen
+port redraw =
+  TileGrid.start
+  { state = initialState
+  , getMap = State.toMap
+  , toTileId = toTileId
+  , updates = updates
+  }
+
 
 initialState : GameState
 initialState =
@@ -47,20 +42,29 @@ initialState =
   }
 
 
-tileSet : TileSet Cell
-tileSet =
-  { size = (24, 24)
-  , toID = \cell ->
-      case cell of
-        Fire 1 -> 11
-        Fire 2 -> 12
-        Fire 3 -> 13
-        Fire 4 -> 14
-        Fire 5 -> 15
-        Player True -> 21
-        Player False -> 22
-        _ -> 0
-  }
+toTileId : Cell -> TileId
+toTileId cell =
+  case cell of
+    Fire 1 -> 11
+    Fire 2 -> 12
+    Fire 3 -> 13
+    Fire 4 -> 14
+    Fire 5 -> 15
+    Player True -> 21
+    Player False -> 22
+    _ -> 0
+
+
+updates : Evolution
+updates =
+  let
+    (<>) = TileGrid.mergeUpdates
+  in
+    ( movement
+        <> (3 `timesPerSec` playerBlinking)
+        <> (5 `timesPerSec` flameDying)
+    ) `andAfter` putFlameAtPlayerPos
+
 
 movement : Evolution
 movement =

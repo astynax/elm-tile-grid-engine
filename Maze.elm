@@ -5,7 +5,7 @@ import Keyboard
 
 import Matrix
 
-import TileGrid exposing (TileSet, Screen)
+import TileGrid exposing (Screen, Update)
 import State exposing (State, Direction)
 
 type Cell
@@ -13,18 +13,17 @@ type Cell
   | B  -- brick
   | P  -- player
 
-port updates : Signal Screen
-port updates =
+port redraw : Signal Screen
+port redraw =
   TileGrid.start
   { state = initialState
   , getMap = State.toMap
-  , tileSet = tileSet
-  , updates =
-      Signal.map (State.moveTo ((==) F))
-      <| Keyboard.arrows
+  , toTileId = toTileId
+  , updates = updates
   }
 
-initialState : State.State Cell
+
+initialState : State Cell
 initialState =
   { map =
       Matrix.fromList
@@ -37,12 +36,16 @@ initialState =
   , player = P
   }
 
-tileSet : TileSet Cell
-tileSet =
-  { size = (32, 32)
-  , toID = \cell ->
-      case cell of
-        F -> 1
-        P -> 2
-        _ -> 0
-  }
+
+toTileId : Cell -> TileGrid.TileId
+toTileId cell =
+  case cell of
+    F -> 1
+    P -> 2
+    _ -> 0
+
+
+updates : Signal (Update (State Cell))
+updates =
+  Signal.map (State.moveTo ((==) F))
+  <| Keyboard.arrows
