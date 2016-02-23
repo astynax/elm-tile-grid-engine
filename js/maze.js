@@ -7716,74 +7716,6 @@ Elm.Set.make = function (_elm) {
                             ,toList: toList
                             ,fromList: fromList};
 };
-Elm.Matrix = Elm.Matrix || {};
-Elm.Matrix.make = function (_elm) {
-   "use strict";
-   _elm.Matrix = _elm.Matrix || {};
-   if (_elm.Matrix.values) return _elm.Matrix.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Array = Elm.Array.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var _op = {};
-   var rowCount = function (m) {    return $Array.length(m);};
-   var colCount = function (m) {    return A2($Maybe.withDefault,0,A2($Maybe.map,$Array.length,A2($Array.get,0,m)));};
-   var fromList = function (l) {    return $Array.fromList(A2($List.map,$Array.fromList,l));};
-   var toList = function (m) {    return $Array.toList(A2($Array.map,$Array.toList,m));};
-   var flatten = function (m) {    return $List.concat(toList(m));};
-   var map = F2(function (f,m) {    return A2($Array.map,$Array.map(f),m);});
-   var col = $Basics.snd;
-   var row = $Basics.fst;
-   var get = F2(function (location,m) {    return A2($Maybe.andThen,A2($Array.get,row(location),m),$Array.get(col(location)));});
-   var update = F3(function (location,f,m) {
-      return A2($Maybe.withDefault,
-      m,
-      A2($Maybe.map,
-      function (current) {
-         return A2($Maybe.withDefault,
-         m,
-         A2($Maybe.map,
-         function (oldRow) {
-            return function (newRow) {
-               return A3($Array.set,row(location),newRow,m);
-            }(A3($Array.set,col(location),f(current),oldRow));
-         },
-         A2($Array.get,row(location),m)));
-      },
-      A2(get,location,m)));
-   });
-   var set = F3(function (location,value,m) {    return A3(update,location,$Basics.always(value),m);});
-   var loc = F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};});
-   var matrix = F3(function (numRows,numCols,f) {
-      return A2($Array.initialize,numRows,function (row) {    return A2($Array.initialize,numCols,function (col) {    return f(A2(loc,row,col));});});
-   });
-   var square = function (size) {    return A2(matrix,size,size);};
-   var mapWithLocation = F2(function (f,m) {
-      return A2($Array.indexedMap,
-      F2(function (rowNum,row) {    return A2($Array.indexedMap,F2(function (colNum,element) {    return A2(f,A2(loc,rowNum,colNum),element);}),row);}),
-      m);
-   });
-   return _elm.Matrix.values = {_op: _op
-                               ,loc: loc
-                               ,row: row
-                               ,col: col
-                               ,square: square
-                               ,matrix: matrix
-                               ,map: map
-                               ,mapWithLocation: mapWithLocation
-                               ,toList: toList
-                               ,fromList: fromList
-                               ,flatten: flatten
-                               ,get: get
-                               ,set: set
-                               ,update: update
-                               ,colCount: colCount
-                               ,rowCount: rowCount};
-};
 Elm.Native.Keyboard = {};
 
 Elm.Native.Keyboard.make = function(localRuntime) {
@@ -7893,6 +7825,74 @@ Elm.Keyboard.make = function (_elm) {
                                  ,isDown: isDown
                                  ,keysDown: keysDown
                                  ,presses: presses};
+};
+Elm.Matrix = Elm.Matrix || {};
+Elm.Matrix.make = function (_elm) {
+   "use strict";
+   _elm.Matrix = _elm.Matrix || {};
+   if (_elm.Matrix.values) return _elm.Matrix.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var rowCount = function (m) {    return $Array.length(m);};
+   var colCount = function (m) {    return A2($Maybe.withDefault,0,A2($Maybe.map,$Array.length,A2($Array.get,0,m)));};
+   var fromList = function (l) {    return $Array.fromList(A2($List.map,$Array.fromList,l));};
+   var toList = function (m) {    return $Array.toList(A2($Array.map,$Array.toList,m));};
+   var flatten = function (m) {    return $List.concat(toList(m));};
+   var map = F2(function (f,m) {    return A2($Array.map,$Array.map(f),m);});
+   var col = $Basics.snd;
+   var row = $Basics.fst;
+   var get = F2(function (location,m) {    return A2($Maybe.andThen,A2($Array.get,row(location),m),$Array.get(col(location)));});
+   var update = F3(function (location,f,m) {
+      return A2($Maybe.withDefault,
+      m,
+      A2($Maybe.map,
+      function (current) {
+         return A2($Maybe.withDefault,
+         m,
+         A2($Maybe.map,
+         function (oldRow) {
+            return function (newRow) {
+               return A3($Array.set,row(location),newRow,m);
+            }(A3($Array.set,col(location),f(current),oldRow));
+         },
+         A2($Array.get,row(location),m)));
+      },
+      A2(get,location,m)));
+   });
+   var set = F3(function (location,value,m) {    return A3(update,location,$Basics.always(value),m);});
+   var loc = F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};});
+   var matrix = F3(function (numRows,numCols,f) {
+      return A2($Array.initialize,numRows,function (row) {    return A2($Array.initialize,numCols,function (col) {    return f(A2(loc,row,col));});});
+   });
+   var square = function (size) {    return A2(matrix,size,size);};
+   var mapWithLocation = F2(function (f,m) {
+      return A2($Array.indexedMap,
+      F2(function (rowNum,row) {    return A2($Array.indexedMap,F2(function (colNum,element) {    return A2(f,A2(loc,rowNum,colNum),element);}),row);}),
+      m);
+   });
+   return _elm.Matrix.values = {_op: _op
+                               ,loc: loc
+                               ,row: row
+                               ,col: col
+                               ,square: square
+                               ,matrix: matrix
+                               ,map: map
+                               ,mapWithLocation: mapWithLocation
+                               ,toList: toList
+                               ,fromList: fromList
+                               ,flatten: flatten
+                               ,get: get
+                               ,set: set
+                               ,update: update
+                               ,colCount: colCount
+                               ,rowCount: rowCount};
 };
 Elm.TileGrid = Elm.TileGrid || {};
 Elm.TileGrid.make = function (_elm) {
