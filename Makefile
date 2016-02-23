@@ -1,5 +1,5 @@
 sync:
-	cp dist/*.js js/
+	cp examples/dist/*.js js/
 	git add js/*
 	git com -m "update"
 	git push
