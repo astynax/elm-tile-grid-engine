@@ -1,10 +1,11 @@
 {
     "version": "1.0.0",
-    "summary": "Engine for building games with tile-based graphics",
+    "summary": "Examples of usage a Tile Grid Engine",
     "repository": "https://github.com/astynax/elm-tile-grid-engine.git",
     "license": "MIT",
     "source-directories": [
-        "src"
+        ".",
+        "../src"
     ],
     "exposed-modules": [],
     "dependencies": {
