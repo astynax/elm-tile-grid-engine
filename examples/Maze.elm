@@ -1,7 +1,8 @@
 module Maze where
 
-import Signal exposing (Signal)
 import Keyboard
+import Signal exposing (Signal)
+import Time
 
 import Matrix
 
@@ -47,5 +48,15 @@ toTileId cell =
 
 updates : Signal (Update (State Cell))
 updates =
-  Signal.map (State.moveTo ((==) F))
-  <| Keyboard.arrows
+  let
+    movement =
+      Signal.map (State.moveTo ((==) F))
+      <| Keyboard.arrows
+  in
+    Signal.merge rerfesh movement
+
+
+-- TODO: remove when I find a way to do a first (and alone) refresh
+rerfesh : Signal (Update (State Cell))
+rerfesh =
+  Signal.map (always Maybe.Just) <| Time.fps 10
