@@ -5576,6 +5576,162 @@ Elm.Signal.Extra.make = function (_elm) {
                                      ,passiveMap2: passiveMap2
                                      ,withPassive: withPassive};
 };
+Elm.Native.Time = {};
+
+Elm.Native.Time.make = function(localRuntime)
+{
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input, state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value, initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2(NS.map, fst, NS.timestamp(ticker));
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new Date(t); },
+		read: read
+	};
+};
+
+Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values) return _elm.Time.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,signal) {
+      var stop = A2($Signal.map,$Basics.always(-1),A2(delay,time,signal));
+      var start = A2($Signal.map,$Basics.always(1),signal);
+      var delaydiff = A3($Signal.foldp,F2(function (x,y) {    return x + y;}),0,A2($Signal.merge,start,stop));
+      return A2($Signal.map,F2(function (x,y) {    return !_U.eq(x,y);})(0),delaydiff);
+   });
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {    return A2(fpsWhen,targetFrames,$Signal.constant(true));};
+   var inMilliseconds = function (t) {    return t;};
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {    return t / hour;};
+   var inMinutes = function (t) {    return t / minute;};
+   var inSeconds = function (t) {    return t / second;};
+   return _elm.Time.values = {_op: _op
+                             ,millisecond: millisecond
+                             ,second: second
+                             ,minute: minute
+                             ,hour: hour
+                             ,inMilliseconds: inMilliseconds
+                             ,inSeconds: inSeconds
+                             ,inMinutes: inMinutes
+                             ,inHours: inHours
+                             ,fps: fps
+                             ,fpsWhen: fpsWhen
+                             ,every: every
+                             ,timestamp: timestamp
+                             ,delay: delay
+                             ,since: since};
+};
 Elm.Native.Array = {};
 Elm.Native.Array.make = function(localRuntime) {
 
@@ -7894,6 +8050,152 @@ Elm.Matrix.make = function (_elm) {
                                ,colCount: colCount
                                ,rowCount: rowCount};
 };
+Elm.Native.TileGrid = Elm.Native.WebGL || {};
+Elm.Native.TileGrid.make = function(elm) {
+
+    elm.Native = elm.Native || {};
+    elm.Native.TileGrid = elm.Native.TileGrid || {};
+
+    var Result = Elm.Result.make(elm);
+    var NS = Elm.Native.Signal.make(elm);
+
+    if (elm.Native.TileGrid.values) {
+        return elm.Native.TileGrid.values;
+    };
+
+    var createNode = Elm.Native.Graphics.Element.make(elm).createNode;
+    var newElement = Elm.Native.Graphics.Element.make(elm).newElement;
+
+    function grid(dimensions, tilesize, tileset, signal) {
+        var w = dimensions._0 * tilesize._0;
+        var h = dimensions._1 * tilesize._1;
+
+        function render(model) {
+            var canvas = createNode('canvas');
+
+            canvas.style.display = "block";
+            canvas.style.position = "absolute";
+
+            model.cache.context = canvas.getContext('2d');
+
+            resize(canvas, model.w, model.h);
+            update(canvas, model, model);
+
+            return canvas;
+        };
+
+        function resize(canvas, w, h) {
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            canvas.width = w;
+            canvas.height = h;
+        };
+
+        function update(canvas, oldModel, newModel) {
+            newModel.cache = oldModel.cache;
+
+            // (un)register a signal handler
+            if (oldModel.cache.listener) {
+                oldModel.signal.kids.pop(oldModel.cache.listener);
+            };
+            oldModel.cache.listener = NS.output(
+                'grid-listener', draw(newModel), newModel.signal
+            );
+
+            // resize if need
+            if (newModel.w != oldModel.w || newModel.h != oldModel.h) {
+                resize(canvas, newModel.w, newModel.h);
+            };
+
+            return canvas;
+        };
+
+        function draw(model) {
+            return function inner(data) {
+                for (var y = 0; y < data.length; y++) {
+                    var row = data[y];
+                    for (var x = 0; x < row.length; x++) {
+                        model.cache.context.drawImage(
+                            model.tileset[row[x]],
+                            x * model.tw,
+                            y * model.th
+                        );
+                    };
+                };
+            };
+        };
+
+        var result = NS.input('TileGrid.grid', Result.Err(""));
+
+        loadTiles(tileset, function(ok, arg) {
+            if (ok) {
+                var elem = {
+                    ctor: 'Custom',
+                    type: 'TileGrid',
+                    render: render,
+                    update: update,
+                    model: {
+                        cache: {},
+                        tileset: arg,
+                        signal: signal,
+                        w: w,
+                        h: h,
+                        tw: tilesize._0,
+                        th: tilesize._1,
+                    }
+                };
+                elm.notify(result.id, Result.Ok(A3(newElement, w, h, elem)));
+            } else {
+                elm.notify(result.id, Result.Err(arg));
+            };
+        });
+
+        return result;
+    }
+
+    function loadTiles(items, callback) {
+        var tileset = {};
+        var errors = [];
+        var counter = items.length;
+
+        function checkCompletion() {
+            if (counter == 0) {
+                if (errors.length == 0) {
+                    return callback(true, tileset);
+                } else {
+                    return callback(
+                        false, "Failed to load image(s): " + errors.toString()
+                    );
+                };
+            };
+        };
+
+        for (var idx = 0; idx < items.length; idx++) {
+            var item = items[idx];
+            var key = item._0;
+            var src = item._1;
+
+            var img = new Image();
+
+            img.onload = function() {
+                tileset[key] = img;
+                return checkCompletion();
+            };
+
+            img.onerror = function() {
+                errors.push(src);
+                return checkCompletion();
+            };
+
+            img.src = src;
+        };
+    };
+
+    return elm.Native.TileGrid.values = {
+        grid: F4(grid),
+    };
+};
+
 Elm.TileGrid = Elm.TileGrid || {};
 Elm.TileGrid.make = function (_elm) {
    "use strict";
@@ -7902,8 +8204,10 @@ Elm.TileGrid.make = function (_elm) {
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
+   $Native$TileGrid = Elm.Native.TileGrid.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $Signal$Extra = Elm.Signal.Extra.make(_elm);
@@ -7916,6 +8220,7 @@ Elm.TileGrid.make = function (_elm) {
    });
    var mergeUpdates = F2(function (s1,s2) {    return A3($Signal$Extra.fairMerge,combine,s1,s2);});
    var updateState = F2(function (update,app) {    return A2($Maybe.map,function (s) {    return _U.update(app,{state: s});},update(app.state));});
+   var grid = $Native$TileGrid.grid;
    var start = function (app) {
       return A2($Signal.map,
       function (g) {
@@ -7924,7 +8229,7 @@ Elm.TileGrid.make = function (_elm) {
       A3($Signal$Extra.filterFold,updateState,app,app.updates));
    };
    var App = F4(function (a,b,c,d) {    return {state: a,getMap: b,updates: c,toTileId: d};});
-   return _elm.TileGrid.values = {_op: _op,start: start,mergeUpdates: mergeUpdates,combine: combine,App: App};
+   return _elm.TileGrid.values = {_op: _op,start: start,grid: grid,mergeUpdates: mergeUpdates,combine: combine,App: App};
 };
 Elm.State = Elm.State || {};
 Elm.State.make = function (_elm) {
@@ -7968,8 +8273,10 @@ Elm.Maze.make = function (_elm) {
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $State = Elm.State.make(_elm),
-   $TileGrid = Elm.TileGrid.make(_elm);
+   $TileGrid = Elm.TileGrid.make(_elm),
+   $Time = Elm.Time.make(_elm);
    var _op = {};
+   var rerfesh = A2($Signal.map,$Basics.always($Maybe.Just),$Time.fps(10));
    var toTileId = function (cell) {    var _p0 = cell;switch (_p0.ctor) {case "F": return 1;case "P": return 2;default: return 0;}};
    var P = {ctor: "P"};
    var B = {ctor: "B"};
@@ -7977,11 +8284,14 @@ Elm.Maze.make = function (_elm) {
    var initialState = {map: $Matrix.fromList(_U.list([_U.list([B,B,F,B]),_U.list([F,F,F,B]),_U.list([B,F,B,B]),_U.list([B,F,F,F])]))
                       ,pos: A2($Matrix.loc,1,1)
                       ,player: P};
-   var updates = A2($Signal.map,$State.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows);
+   var updates = function () {
+      var movement = A2($Signal.map,$State.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows);
+      return A2($Signal.merge,rerfesh,movement);
+   }();
    var redraw = Elm.Native.Port.make(_elm).outboundSignal("redraw",
    function (v) {
       return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return Elm.Native.List.make(_elm).toArray(v).map(function (v) {    return v;});});
    },
    $TileGrid.start({state: initialState,getMap: $State.toMap,toTileId: toTileId,updates: updates}));
-   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,initialState: initialState,toTileId: toTileId,updates: updates};
+   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,initialState: initialState,toTileId: toTileId,updates: updates,rerfesh: rerfesh};
 };
