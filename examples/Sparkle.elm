@@ -1,12 +1,15 @@
 module Sparkle where
 
+import Graphics.Element exposing (Element)
+import Keyboard
 import Signal exposing (Signal)
 import Time
-import Keyboard
 
 import Matrix
 
-import TileGrid exposing (Update, Screen, TileId)
+import TileGridEngine exposing (Update, withUpdates, (<|>))
+import TileGridEngine.TileGrid exposing (Map, TileSet, TileId, grid)
+
 import State exposing (State, Direction)
 
 
@@ -24,14 +27,10 @@ type alias Evolution = Signal (Update GameState)
 type alias FPS = Int
 
 
-port redraw : Signal Screen
-port redraw =
-  TileGrid.start
-  { state = initialState
-  , getMap = State.toMap
-  , toTileId = toTileId
-  , updates = updates
-  }
+main : Signal Element
+main =
+  Signal.map (grid (40, 30) tiles << Matrix.map toTileId << State.toMap)
+  <| initialState `withUpdates` updates
 
 
 initialState : GameState
@@ -55,15 +54,28 @@ toTileId cell =
     _ -> 0
 
 
+tiles : TileSet
+tiles =
+  ( (24, 24)
+  , [ (0, "images/darkness.png")
+    , (11, "images/fire1.png")
+    , (12, "images/fire2.png")
+    , (13, "images/fire3.png")
+    , (14, "images/fire4.png")
+    , (15, "images/fire5.png")
+    , (21, "images/sparkle1.png")
+    , (22, "images/sparkle2.png")
+    ]
+  )
+
+
+
 updates : Evolution
 updates =
-  let
-    (<>) = TileGrid.mergeUpdates
-  in
-    ( movement
-        <> (3 `timesPerSec` playerBlinking)
-        <> (5 `timesPerSec` flameDying)
-    ) `andAfter` putFlameAtPlayerPos
+  ( movement
+      <|> (3 `timesPerSec` playerBlinking)
+      <|> (5 `timesPerSec` flameDying)
+  ) `andAfter` putFlameAtPlayerPos
 
 
 movement : Evolution

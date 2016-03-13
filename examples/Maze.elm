@@ -1,27 +1,27 @@
 module Maze where
 
+import Graphics.Element exposing (Element)
 import Keyboard
 import Signal exposing (Signal)
-import Time
 
 import Matrix
 
-import TileGrid exposing (Screen, Update)
+import TileGridEngine exposing (Update, withUpdates)
+import TileGridEngine.TileGrid exposing (Map, TileSet, TileId, grid)
+
 import State exposing (State, Direction)
+
 
 type Cell
   = F  -- floor
   | B  -- brick
   | P  -- player
 
-port redraw : Signal Screen
-port redraw =
-  TileGrid.start
-  { state = initialState
-  , getMap = State.toMap
-  , toTileId = toTileId
-  , updates = updates
-  }
+
+main : Signal Element
+main =
+  Signal.map (grid (4, 4) tiles << Matrix.map toTileId << State.toMap)
+  <| initialState `withUpdates` updates
 
 
 initialState : State Cell
@@ -38,25 +38,24 @@ initialState =
   }
 
 
-toTileId : Cell -> TileGrid.TileId
-toTileId cell =
-  case cell of
-    F -> 1
-    P -> 2
-    _ -> 0
-
-
 updates : Signal (Update (State Cell))
 updates =
-  let
-    movement =
-      Signal.map (State.moveTo ((==) F))
-      <| Keyboard.arrows
-  in
-    Signal.merge rerfesh movement
+  Signal.map (State.moveTo ((==) F)) Keyboard.arrows
 
 
--- TODO: remove when I find a way to do a first (and alone) refresh
-rerfesh : Signal (Update (State Cell))
-rerfesh =
-  Signal.map (always Maybe.Just) <| Time.fps 10
+tiles : TileSet
+tiles =
+  ( (32, 32)
+  , [ (1, "images/brick.png")
+    , (2, "images/floor.png")
+    , (3, "images/pc_on_floor.png")
+    ]
+  )
+
+
+toTileId : Cell -> TileId
+toTileId cell =
+  case cell of
+    F -> 2
+    P -> 3
+    _ -> 1

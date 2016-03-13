@@ -1,11 +1,12 @@
 module State
   ( State, Direction
   , toMap, moveTo
-  )where
+  ) where
 
 import Maybe exposing (Maybe(..))
 
 import Matrix exposing (Matrix, Location)
+
 
 type alias Direction =
   { x : Int
@@ -18,9 +19,9 @@ type alias State a =
   , player : a
   }
 
-toMap : State a -> List (List a)
+toMap : State a -> Matrix a
 toMap s =
-  Matrix.set s.pos s.player s.map |> Matrix.toList
+  Matrix.set s.pos s.player s.map
 
 moveTo : (a -> Bool) -> Direction -> State a -> Maybe (State a)
 moveTo p d s =
@@ -33,10 +34,10 @@ moveTo p d s =
 
 move : Direction -> State a -> State a
 move d s =
-  { s
-    | pos = Matrix.loc
-            (Matrix.row s.pos - d.y)
-            (Matrix.col s.pos + d.x)
+  { s | pos =
+          Matrix.loc
+                  (Matrix.row s.pos - d.y)
+                  (Matrix.col s.pos + d.x)
   }
 
 isPosValid : (a -> Bool) -> State a -> Bool
