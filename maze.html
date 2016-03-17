@@ -7683,6 +7683,65 @@ Elm.Set.make = function (_elm) {
                             ,diff: diff
                             ,toList: toList
                             ,fromList: fromList};
+};Elm.Focus = Elm.Focus || {};
+Elm.Focus.make = function (_elm) {
+   "use strict";
+   _elm.Focus = _elm.Focus || {};
+   if (_elm.Focus.values) return _elm.Focus.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var update = F3(function (_p0,f,big) {    var _p1 = _p0;return A2(_p1._0.update,f,big);});
+   var set = F3(function (_p2,small,big) {    var _p3 = _p2;return A2(_p3._0.update,$Basics.always(small),big);});
+   var get = F2(function (_p4,big) {    var _p5 = _p4;return _p5._0.get(big);});
+   var Focus = function (a) {    return {ctor: "Focus",_0: a};};
+   var create = F2(function (get,update) {    return Focus({get: get,update: update});});
+   _op["=>"] = F2(function (_p7,_p6) {
+      var _p8 = _p7;
+      var _p11 = _p8._0;
+      var _p9 = _p6;
+      var _p10 = _p9._0;
+      var update = F2(function (f,big) {    return A2(_p11.update,_p10.update(f),big);});
+      var get = function (big) {    return _p10.get(_p11.get(big));};
+      return Focus({get: get,update: update});
+   });
+   return _elm.Focus.values = {_op: _op,get: get,set: set,update: update,create: create};
+};Elm.State = Elm.State || {};
+Elm.State.make = function (_elm) {
+   "use strict";
+   _elm.State = _elm.State || {};
+   if (_elm.State.values) return _elm.State.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Focus = Elm.Focus.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Signal$Extra = Elm.Signal.Extra.make(_elm);
+   var _op = {};
+   _op["^."] = $Basics.flip($Focus.get);
+   _op["%~"] = $Focus.update;
+   var forward = F4(function (address,state,focus,subView) {
+      var visit = $Focus.update(focus);
+      return A2(subView,A2($Signal.forwardTo,address,visit),A2(_op["^."],state,focus));
+   });
+   var start = F3(function (state,view,updates) {
+      var mailbox = $Signal.mailbox($Basics.identity);
+      return A2($Signal.map,
+      view(mailbox.address),
+      A3($Signal.foldp,
+      F2(function (x,y) {    return x(y);}),
+      state,
+      A3($Signal$Extra.fairMerge,F2(function (x,y) {    return function (_p0) {    return x(y(_p0));};}),updates,mailbox.signal)));
+   });
+   return _elm.State.values = {_op: _op,start: start,forward: forward};
 };Elm.Native.Keyboard = {};
 
 Elm.Native.Keyboard.make = function(localRuntime) {
@@ -8016,56 +8075,42 @@ Elm.TileGridEngine.TileGrid.make = function (_elm) {
    var _op = {};
    var grid = $Native$TileGridEngine$TileGrid.grid;
    return _elm.TileGridEngine.TileGrid.values = {_op: _op,grid: grid};
-};Elm.TileGridEngine = Elm.TileGridEngine || {};
-Elm.TileGridEngine.make = function (_elm) {
+};Elm.SimpleState = Elm.SimpleState || {};
+Elm.SimpleState.make = function (_elm) {
    "use strict";
-   _elm.TileGridEngine = _elm.TileGridEngine || {};
-   if (_elm.TileGridEngine.values) return _elm.TileGridEngine.values;
+   _elm.SimpleState = _elm.SimpleState || {};
+   if (_elm.SimpleState.values) return _elm.SimpleState.values;
    var _U = Elm.Native.Utils.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Debug = Elm.Debug.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Signal$Extra = Elm.Signal.Extra.make(_elm);
-   var _op = {};
-   var combine = F2(function (u1,u2) {
-      var $try = F2(function (f,x) {    return A2($Maybe.withDefault,x,f(x));});
-      return function (_p0) {
-         return $Maybe.Just(A2($try,u2,A2($try,u1,_p0)));
-      };
-   });
-   var mergeUpdates = F2(function (s1,s2) {    return A3($Signal$Extra.fairMerge,combine,s1,s2);});
-   _op["<|>"] = mergeUpdates;
-   var withUpdates = function (state) {    return A2($Signal$Extra.filterFold,F2(function (x,y) {    return x(y);}),state);};
-   return _elm.TileGridEngine.values = {_op: _op,withUpdates: withUpdates,mergeUpdates: mergeUpdates};
-};Elm.State = Elm.State || {};
-Elm.State.make = function (_elm) {
-   "use strict";
-   _elm.State = _elm.State || {};
-   if (_elm.State.values) return _elm.State.values;
-   var _U = Elm.Native.Utils.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
+   $Focus = Elm.Focus.make(_elm),
    $List = Elm.List.make(_elm),
    $Matrix = Elm.Matrix.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $State = Elm.State.make(_elm);
    var _op = {};
-   var isPosInBounds = function (s) {
-      var row = $Matrix.row(s.pos);
-      var col = $Matrix.col(s.pos);
-      return _U.cmp(col,0) > -1 && (_U.cmp(row,0) > -1 && (_U.cmp(col,$Matrix.colCount(s.map)) < 0 && _U.cmp(row,$Matrix.rowCount(s.map)) < 0));
+   var isPosValid = F2(function (p,s) {    return A2($Maybe.withDefault,false,A2($Maybe.map,p,A2($Matrix.get,s.pos_,s.map_)));});
+   var toMap = function (s) {    return A3($Matrix.set,s.pos_,s.player_,s.map_);};
+   var player = A2($Focus.create,function (_) {    return _.player_;},F2(function (f,s) {    return _U.update(s,{player_: f(s.player_)});}));
+   var pos = A2($Focus.create,function (_) {    return _.pos_;},F2(function (f,s) {    return _U.update(s,{pos_: f(s.pos_)});}));
+   var move = function (d) {    return A2($Focus.update,pos,function (p) {    return A2($Matrix.loc,$Matrix.row(p) - d.y,$Matrix.col(p) + d.x);});};
+   var map = A2($Focus.create,function (_) {    return _.map_;},F2(function (f,s) {    return _U.update(s,{map_: f(s.map_)});}));
+   var isPosInBounds = function (state) {
+      var p = A2($State._op["^."],state,pos);
+      var col = $Matrix.col(p);
+      var row = $Matrix.row(p);
+      var m = A2($State._op["^."],state,map);
+      return _U.cmp(col,0) > -1 && (_U.cmp(row,0) > -1 && (_U.cmp(col,$Matrix.colCount(m)) < 0 && _U.cmp(row,$Matrix.rowCount(m)) < 0));
    };
-   var isPosValid = F2(function (p,s) {    return A2($Maybe.withDefault,false,A2($Maybe.map,p,A2($Matrix.get,s.pos,s.map)));});
-   var move = F2(function (d,s) {    return _U.update(s,{pos: A2($Matrix.loc,$Matrix.row(s.pos) - d.y,$Matrix.col(s.pos) + d.x)});});
-   var moveTo = F3(function (p,d,s) {    var s$ = A2(move,d,s);return isPosInBounds(s$) && A2(isPosValid,p,s$) ? $Maybe.Just(s$) : $Maybe.Nothing;});
-   var toMap = function (s) {    return A3($Matrix.set,s.pos,s.player,s.map);};
-   var State = F3(function (a,b,c) {    return {map: a,pos: b,player: c};});
+   var moveTo = F3(function (test,dir,state) {
+      var newState = A2(move,dir,state);
+      return isPosInBounds(newState) && A2(isPosValid,test,newState) ? newState : state;
+   });
+   var State = F3(function (a,b,c) {    return {map_: a,pos_: b,player_: c};});
    var Direction = F2(function (a,b) {    return {x: a,y: b};});
-   return _elm.State.values = {_op: _op,toMap: toMap,moveTo: moveTo,State: State,Direction: Direction};
+   return _elm.SimpleState.values = {_op: _op,map: map,pos: pos,player: player,toMap: toMap,moveTo: moveTo,State: State,Direction: Direction};
 };Elm.Maze = Elm.Maze || {};
 Elm.Maze.make = function (_elm) {
    "use strict";
@@ -8081,8 +8126,8 @@ Elm.Maze.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $SimpleState = Elm.SimpleState.make(_elm),
    $State = Elm.State.make(_elm),
-   $TileGridEngine = Elm.TileGridEngine.make(_elm),
    $TileGridEngine$TileGrid = Elm.TileGridEngine.TileGrid.make(_elm);
    var _op = {};
    var toTileId = function (cell) {    var _p0 = cell;switch (_p0.ctor) {case "F": return 2;case "P": return 3;default: return 1;}};
@@ -8091,17 +8136,18 @@ Elm.Maze.make = function (_elm) {
                ,_1: _U.list([{ctor: "_Tuple2",_0: 1,_1: "images/brick.png"}
                             ,{ctor: "_Tuple2",_0: 2,_1: "images/floor.png"}
                             ,{ctor: "_Tuple2",_0: 3,_1: "images/pc_on_floor.png"}])};
+   var view = function (_p1) {
+      return function (_p2) {
+         return A3($TileGridEngine$TileGrid.grid,{ctor: "_Tuple2",_0: 4,_1: 4},tiles,A2($Matrix.map,toTileId,$SimpleState.toMap(_p2)));
+      };
+   };
    var P = {ctor: "P"};
    var B = {ctor: "B"};
    var F = {ctor: "F"};
-   var initialState = {map: $Matrix.fromList(_U.list([_U.list([B,B,F,B]),_U.list([F,F,F,B]),_U.list([B,F,B,B]),_U.list([B,F,F,F])]))
-                      ,pos: A2($Matrix.loc,1,1)
-                      ,player: P};
-   var updates = A2($Signal.map,$State.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows);
-   var main = A2($Signal.map,
-   function (_p1) {
-      return A3($TileGridEngine$TileGrid.grid,{ctor: "_Tuple2",_0: 4,_1: 4},tiles,A2($Matrix.map,toTileId,$State.toMap(_p1)));
-   },
-   A2($TileGridEngine.withUpdates,initialState,updates));
-   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,main: main,initialState: initialState,updates: updates,tiles: tiles,toTileId: toTileId};
+   var initialState = {map_: $Matrix.fromList(_U.list([_U.list([B,B,F,B]),_U.list([F,F,F,B]),_U.list([B,F,B,B]),_U.list([B,F,F,F])]))
+                      ,pos_: A2($Matrix.loc,1,1)
+                      ,player_: P};
+   var updates = A2($Signal.map,$SimpleState.moveTo(F2(function (x,y) {    return _U.eq(x,y);})(F)),$Keyboard.arrows);
+   var main = A3($State.start,initialState,view,updates);
+   return _elm.Maze.values = {_op: _op,F: F,B: B,P: P,main: main,initialState: initialState,view: view,updates: updates,tiles: tiles,toTileId: toTileId};
 };</script></head><body><script type="text/javascript">Elm.fullscreen(Elm.Maze)</script></body></html>
