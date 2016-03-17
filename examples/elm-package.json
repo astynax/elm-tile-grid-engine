@@ -11,8 +11,10 @@
     "native-modules": true,
     "dependencies": {
         "Apanatshka/elm-signal-extra": "5.7.0 <= v < 6.0.0",
+        "astynax/elm-state": "1.0.1 <= v < 2.0.0",
         "chendrix/elm-matrix": "3.1.0 <= v < 4.0.0",
-        "elm-lang/core": "3.0.0 <= v < 4.0.0"
+        "elm-lang/core": "3.0.0 <= v < 4.0.0",
+        "evancz/focus": "2.0.0 <= v < 3.0.0"
     },
     "elm-version": "0.16.0 <= v < 0.17.0"
 }

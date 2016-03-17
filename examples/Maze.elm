@@ -6,10 +6,11 @@ import Signal exposing (Signal)
 
 import Matrix
 
-import TileGridEngine exposing (Update, withUpdates)
 import TileGridEngine.TileGrid exposing (Map, TileSet, TileId, grid)
 
-import State exposing (State, Direction)
+import State exposing (View, Update)
+
+import SimpleState exposing (State, Direction)
 
 
 type Cell
@@ -20,27 +21,30 @@ type Cell
 
 main : Signal Element
 main =
-  Signal.map (grid (4, 4) tiles << Matrix.map toTileId << State.toMap)
-  <| initialState `withUpdates` updates
+  State.start initialState view updates
 
 
 initialState : State Cell
 initialState =
-  { map =
+  { map_ =
       Matrix.fromList
       [ [ B, B, F, B ]
       , [ F, F, F, B ]
       , [ B, F, B, B ]
       , [ B, F, F, F ]
       ]
-  , pos = Matrix.loc 1 1
-  , player = P
+  , pos_ = Matrix.loc 1 1
+  , player_ = P
   }
+
+
+view : View (State Cell) Element
+view _ = grid (4, 4) tiles << Matrix.map toTileId << SimpleState.toMap
 
 
 updates : Signal (Update (State Cell))
 updates =
-  Signal.map (State.moveTo ((==) F)) Keyboard.arrows
+  Signal.map (SimpleState.moveTo ((==) F)) Keyboard.arrows
 
 
 tiles : TileSet

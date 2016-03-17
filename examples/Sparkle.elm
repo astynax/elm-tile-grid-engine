@@ -6,11 +6,13 @@ import Signal exposing (Signal)
 import Time
 
 import Matrix
+import Signal.Extra as Signal
 
-import TileGridEngine exposing (Update, withUpdates, (<|>))
 import TileGridEngine.TileGrid exposing (Map, TileSet, TileId, grid)
 
-import State exposing (State, Direction)
+import State exposing (View, Update, (%~), (^.))
+
+import SimpleState exposing (State, Direction)
 
 
 type alias Phase = Bool
@@ -29,16 +31,19 @@ type alias FPS = Int
 
 main : Signal Element
 main =
-  Signal.map (grid (40, 30) tiles << Matrix.map toTileId << State.toMap)
-  <| initialState `withUpdates` updates
+  State.start initialState view updates
 
 
 initialState : GameState
 initialState =
-  { map = Matrix.matrix 30 40 (\_ -> Floor)
-  , pos = Matrix.loc 5 5
-  , player = Player True
+  { map_ = Matrix.matrix 30 40 <| always Floor
+  , pos_ = Matrix.loc 5 5
+  , player_ = Player True
   }
+
+
+view : View GameState Element
+view _ = grid (40, 30) tiles << Matrix.map toTileId << SimpleState.toMap
 
 
 toTileId : Cell -> TileId
@@ -69,13 +74,12 @@ tiles =
   )
 
 
-
 updates : Evolution
 updates =
   ( movement
-      <|> (3 `timesPerSec` playerBlinking)
-      <|> (5 `timesPerSec` flameDying)
-  ) `andAfter` putFlameAtPlayerPos
+      <> (3 `timesPerSec` playerBlinking)
+      <> (5 `timesPerSec` flameDying)
+  ) `andThen` putFlameAtPlayerPos
 
 
 movement : Evolution
@@ -85,41 +89,45 @@ movement =
     autorepeat = Signal.sampleOn (Time.fps 5)
   in
     Signal.merge keys (autorepeat keys)
-    |> Signal.map (State.moveTo (\_ -> True))
+    |> Signal.map (SimpleState.moveTo (always True))
 
 
 playerBlinking : GameState -> GameState
-playerBlinking state =
-  { state | player =
-      case state.player of
-        Player p -> Player (not p)
-        _ -> state.player
-  }
+playerBlinking =
+  SimpleState.player
+    %~ (\p ->
+          case p of
+            Player p' -> Player (not p')
+            _ -> p
+       )
+
 
 flameDying : GameState -> GameState
-flameDying state =
-  { state | map =
-      Matrix.map
-      (\cell -> case cell of
-                  Fire 1 -> Fire 2
-                  Fire n -> Fire (n - 1)
-                  _ -> cell
-      )
-      state.map
-  }
+flameDying =
+  SimpleState.map
+    %~ Matrix.map
+       (\cell ->
+          case cell of
+            Fire 1 -> Fire 2
+            Fire n -> Fire (n - 1)
+            _ -> cell
+       )
+
 
 timesPerSec : FPS -> (GameState -> GameState) -> Evolution
 timesPerSec fps update =
-  Time.fps fps
-    |> Signal.map
-       (\_ state -> Just <| update state )
+  Signal.map (always update) <| Time.fps fps
 
 
-andAfter : Evolution -> (GameState -> GameState) -> Evolution
-andAfter evo update =
-  Signal.map (\u state -> Maybe.map update <| u state) evo
-
-
-putFlameAtPlayerPos : GameState -> GameState
+putFlameAtPlayerPos : Update GameState
 putFlameAtPlayerPos state =
-  { state | map = Matrix.set state.pos (Fire 5) state.map }
+  state |> SimpleState.map %~ Matrix.set (state ^. SimpleState.pos) (Fire 5)
+
+
+andThen : Evolution -> Update GameState -> Evolution
+andThen ev update = Signal.map ((>>) update) ev
+
+
+-- TODO: remove after updating elm-state
+(<>) : Evolution -> Evolution -> Evolution
+(<>) = Signal.fairMerge (<<)
